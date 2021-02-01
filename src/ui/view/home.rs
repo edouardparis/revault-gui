@@ -1,9 +1,9 @@
 use iced::{scrollable, Column, Container, Element, Length, Row, Scrollable};
 
 use crate::ui::{
-    component::{card, navbar, separation, text},
+    component::{badge, button, card, navbar, separation, text},
     error::Error,
-    icon,
+    menu::Menu,
     message::Message,
     view::{layout, sidebar::Sidebar, Context},
 };
@@ -53,6 +53,7 @@ impl ManagerHomeView {
 pub struct StakeholderHomeView {
     sidebar: Sidebar,
     scroll: scrollable::State,
+    ack_found_button: iced::button::State,
 }
 
 impl StakeholderHomeView {
@@ -60,6 +61,7 @@ impl StakeholderHomeView {
         StakeholderHomeView {
             scroll: scrollable::State::new(),
             sidebar: Sidebar::new(),
+            ack_found_button: iced::button::State::default(),
         }
     }
 
@@ -69,8 +71,8 @@ impl StakeholderHomeView {
         warning: Option<&Error>,
         vaults: Vec<Element<'a, Message>>,
         balance: &(u64, u64),
+        unsecured_found_balance: &u64,
     ) -> Element<'a, Message> {
-        let unsecured_found: u64 = 0;
         layout::dashboard(
             navbar(layout::navbar_warning(warning)),
             self.sidebar.view(ctx),
@@ -80,10 +82,14 @@ impl StakeholderHomeView {
                         .push(
                             Row::new()
                                 .push(
-                                    unsecured_found_view(&unsecured_found)
-                                        .width(Length::FillPortion(1)),
+                                    unsecured_found_view(
+                                        &mut self.ack_found_button,
+                                        &unsecured_found_balance,
+                                    )
+                                    .max_width(400)
+                                    .width(Length::Fill),
                                 )
-                                .push(balance_view(balance).width(Length::FillPortion(1)))
+                                .push(balance_view(balance).width(Length::Fill))
                                 .spacing(20),
                         )
                         .push(Column::with_children(vaults))
@@ -95,25 +101,46 @@ impl StakeholderHomeView {
     }
 }
 
-fn unsecured_found_view<'a, T: 'a>(found: &u64) -> Container<'a, T> {
+fn unsecured_found_view<'a>(
+    button_state: &'a mut iced::button::State,
+    found: &u64,
+) -> Container<'a, Message> {
     card::simple(Container::new(
         Row::new()
-            .push(Container::new(icon::shield_notif_icon().size(20)).padding(20))
+            .align_items(iced::Align::Center)
+            .push(badge::shield_notif())
             .push(
-                Column::new().push(
-                    Row::new()
-                        .push(text::bold(text::simple(&format!(
-                            "{}",
-                            *found as f64 / 100000000_f64
-                        ))))
-                        .push(text::simple("  BTC received since last signing")),
-                ),
+                Column::new()
+                    .push(
+                        Container::new(
+                            Row::new()
+                                .push(text::bold(text::simple(&format!(
+                                    "{}",
+                                    *found as f64 / 100000000_f64
+                                ))))
+                                .push(text::simple("  BTC received since last signing")),
+                        )
+                        .width(Length::Fill)
+                        .align_x(iced::Align::End),
+                    )
+                    .push(
+                        Container::new(button::important(
+                            button_state,
+                            button::button_content(None, "Acknowledge funds"),
+                            Message::Menu(Menu::ACKFunds),
+                        ))
+                        .width(Length::Fill)
+                        .align_x(iced::Align::End),
+                    )
+                    .spacing(20)
+                    .width(Length::Fill),
             ),
     ))
 }
 
 fn balance_view<'a, T: 'a>(balance: &(u64, u64)) -> Container<'a, T> {
     let col = Column::new()
+        .push(text::bold(text::simple("Balance:")))
         .push(
             Row::new()
                 .padding(5)
