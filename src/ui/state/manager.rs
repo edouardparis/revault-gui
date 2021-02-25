@@ -30,6 +30,7 @@ pub struct ManagerHomeState {
     revaultd: Arc<RevaultD>,
     view: ManagerHomeView,
 
+    /// balance as active and inactive tuple.
     balance: (u64, u64),
     blockheight: Watch<u64>,
     warning: Watch<Error>,
@@ -97,7 +98,9 @@ impl ManagerHomeState {
         let mut inactive_amount: u64 = 0;
         for (vault, _) in vaults {
             match vault.status {
-                VaultStatus::Active => active_amount += vault.amount,
+                VaultStatus::Active | VaultStatus::Unvaulting | VaultStatus::Unvaulted => {
+                    active_amount += vault.amount
+                }
                 VaultStatus::Secured | VaultStatus::Funded | VaultStatus::Unconfirmed => {
                     inactive_amount += vault.amount
                 }

@@ -64,7 +64,9 @@ impl StakeholderHomeState {
         let mut unsecured_amount: u64 = 0;
         for (vault, _) in vaults {
             match vault.status {
-                VaultStatus::Active => active_amount += vault.amount,
+                VaultStatus::Active | VaultStatus::Unvaulting | VaultStatus::Unvaulted => {
+                    active_amount += vault.amount
+                }
                 VaultStatus::Unconfirmed | VaultStatus::Funded => {
                     inactive_amount += vault.amount;
                     unsecured_amount += vault.amount;
