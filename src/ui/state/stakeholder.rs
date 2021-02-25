@@ -36,7 +36,9 @@ pub struct StakeholderHomeState {
     revaultd: Arc<RevaultD>,
     warning: Watch<Error>,
 
+    /// funds without presigned revocation transactions.
     unsecured_fund_balance: u64,
+    /// balance as active and inactive tuple.
     balance: (u64, u64),
     view: StakeholderHomeView,
 }
