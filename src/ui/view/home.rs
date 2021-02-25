@@ -53,7 +53,7 @@ impl ManagerHomeView {
 pub struct StakeholderHomeView {
     sidebar: Sidebar,
     scroll: scrollable::State,
-    ack_found_button: iced::button::State,
+    ack_fund_button: iced::button::State,
 }
 
 impl StakeholderHomeView {
@@ -61,7 +61,7 @@ impl StakeholderHomeView {
         StakeholderHomeView {
             scroll: scrollable::State::new(),
             sidebar: Sidebar::new(),
-            ack_found_button: iced::button::State::default(),
+            ack_fund_button: iced::button::State::default(),
         }
     }
 
@@ -71,7 +71,7 @@ impl StakeholderHomeView {
         warning: Option<&Error>,
         vaults: Vec<Element<'a, Message>>,
         balance: &(u64, u64),
-        unsecured_found_balance: &u64,
+        unsecured_fund_balance: &u64,
     ) -> Element<'a, Message> {
         layout::dashboard(
             navbar(layout::navbar_warning(warning)),
@@ -82,9 +82,9 @@ impl StakeholderHomeView {
                         .push(
                             Row::new()
                                 .push(
-                                    unsecured_found_view(
-                                        &mut self.ack_found_button,
-                                        &unsecured_found_balance,
+                                    unsecured_fund_view(
+                                        &mut self.ack_fund_button,
+                                        &unsecured_fund_balance,
                                     )
                                     .max_width(400)
                                     .width(Length::Fill),
@@ -101,9 +101,9 @@ impl StakeholderHomeView {
     }
 }
 
-fn unsecured_found_view<'a>(
+fn unsecured_fund_view<'a>(
     button_state: &'a mut iced::button::State,
-    found: &u64,
+    fund: &u64,
 ) -> Container<'a, Message> {
     card::simple(Container::new(
         Row::new()
@@ -116,7 +116,7 @@ fn unsecured_found_view<'a>(
                             Row::new()
                                 .push(text::bold(text::simple(&format!(
                                     "{}",
-                                    *found as f64 / 100000000_f64
+                                    *fund as f64 / 100000000_f64
                                 ))))
                                 .push(text::simple("  BTC received since last signing")),
                         )
@@ -138,6 +138,7 @@ fn unsecured_found_view<'a>(
     ))
 }
 
+/// render balance card from a tuple: (active, inactive)
 fn balance_view<'a, T: 'a>(balance: &(u64, u64)) -> Container<'a, T> {
     let col = Column::new()
         .push(text::bold(text::simple("Balance:")))

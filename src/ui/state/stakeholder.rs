@@ -36,7 +36,7 @@ pub struct StakeholderHomeState {
     revaultd: Arc<RevaultD>,
     warning: Watch<Error>,
 
-    unsecured_found_balance: u64,
+    unsecured_fund_balance: u64,
     balance: (u64, u64),
     view: StakeholderHomeView,
 }
@@ -47,7 +47,7 @@ impl StakeholderHomeState {
             revaultd,
             warning: Watch::None,
             view: StakeholderHomeView::new(),
-            unsecured_found_balance: 0,
+            unsecured_fund_balance: 0,
             balance: (0, 0),
         }
     }
@@ -75,7 +75,7 @@ impl StakeholderHomeState {
         }
 
         self.balance = (active_amount, inactive_amount);
-        self.unsecured_found_balance = unsecured_amount;
+        self.unsecured_fund_balance = unsecured_amount;
     }
 }
 
@@ -96,7 +96,7 @@ impl State for StakeholderHomeState {
             None,
             Vec::new(),
             &self.balance,
-            &self.unsecured_found_balance,
+            &self.unsecured_fund_balance,
         )
     }
 
