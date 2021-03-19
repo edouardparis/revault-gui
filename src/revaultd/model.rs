@@ -40,8 +40,14 @@ pub enum VaultStatus {
     #[serde(rename = "funded")]
     Funded,
     /// The emergency transaction is signed
+    #[serde(rename = "securing")]
+    Securing,
+    /// The emergency transaction is signed and watchower has its payload.
     #[serde(rename = "secured")]
     Secured,
+    /// The unvault transaction is signed by the stakeholder.
+    #[serde(rename = "activating")]
+    Activating,
     /// The unvault transaction is signed (implies that the second emergency and the
     /// cancel transaction are signed).
     #[serde(rename = "active")]
@@ -80,7 +86,9 @@ impl std::fmt::Display for VaultStatus {
         match self {
             Self::Unconfirmed => write!(f, "Deposit unconfirmed"),
             Self::Funded => write!(f, "Deposit funded"),
+            Self::Securing => write!(f, "Securing"),
             Self::Secured => write!(f, "Secured"),
+            Self::Activating => write!(f, "Activating"),
             Self::Active => write!(f, "Active"),
             Self::Unvaulting => write!(f, "Unvaulting"),
             Self::Unvaulted => write!(f, "Unvaulted"),
