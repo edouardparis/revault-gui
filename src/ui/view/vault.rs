@@ -232,9 +232,7 @@ impl VaultOnChainTransactionsPanel {
                                         &mut self.action_button,
                                         button::button_content(None, "Revault"),
                                     )
-                                    .on_press(Message::Vault(
-                                        VaultMessage::Delegate(vault.outpoint()),
-                                    )),
+                                    .on_press(Message::Vault(VaultMessage::SelectRevault)),
                                 )
                                 .width(Length::Shrink),
                             )
@@ -259,7 +257,7 @@ impl VaultOnChainTransactionsPanel {
                                     &mut self.action_button,
                                     button::button_content(None, "Revault"),
                                 )
-                                .on_press(Message::Vault(VaultMessage::Delegate(vault.outpoint()))),
+                                .on_press(Message::Vault(VaultMessage::SelectRevault)),
                             )
                             .width(Length::Shrink),
                         )
@@ -342,10 +340,15 @@ fn input_and_outputs<'a, T: 'a>(
         .push(text::bold(text::simple("Inputs")))
         .spacing(10);
     for input in &broadcasted.tx.input {
-        col_input = col_input.push(card::simple(Container::new(text::small(&format!(
-            "{}",
-            input.previous_output
-        )))));
+        col_input = col_input
+            .push(
+                card::simple(Container::new(text::small(&format!(
+                    "{}",
+                    input.previous_output
+                ))))
+                .width(Length::Fill),
+            )
+            .width(Length::FillPortion(1));
     }
     let mut col_output = Column::new()
         .push(text::bold(text::simple("Outputs")))
@@ -358,9 +361,14 @@ fn input_and_outputs<'a, T: 'a>(
         } else {
             col = col.push(text::small(&output.script_pubkey.to_string()))
         }
-        col_output = col_output.push(card::simple(Container::new(col.push(text::bold(
-            text::small(&ctx.converter.converts(output.value).to_string()),
-        )))));
+        col_output = col_output
+            .push(
+                card::simple(Container::new(col.push(text::bold(text::small(
+                    &ctx.converter.converts(output.value).to_string(),
+                )))))
+                .width(Length::Fill),
+            )
+            .width(Length::FillPortion(1));
     }
     Container::new(Row::new().push(col_input).push(col_output).spacing(20))
 }
@@ -832,6 +840,74 @@ impl DelegateVaultView {
                     }))
                     .spacing(20),
             )))
+            .into()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RevaultVaultView {
+    back_button: iced::button::State,
+    broadcast_button: iced::button::State,
+}
+
+impl RevaultVaultView {
+    pub fn new() -> Self {
+        Self {
+            back_button: iced::button::State::new(),
+            broadcast_button: iced::button::State::new(),
+        }
+    }
+
+    pub fn view<'a>(
+        &'a mut self,
+        _ctx: &Context,
+        processing: &bool,
+        success: &bool,
+        warning: Option<&Error>,
+    ) -> Element<'a, Message> {
+        let button_broadcast_action = if *processing {
+            button::primary(
+                &mut self.broadcast_button,
+                button::button_content(None, "Broadcasting"),
+            )
+        } else if *success {
+            button::success(
+                &mut self.broadcast_button,
+                button::button_content(None, "Broadcasted"),
+            )
+        } else {
+            button::primary(
+                &mut self.broadcast_button,
+                button::button_content(None, "Yes Revault"),
+            )
+            .on_press(Message::Vault(VaultMessage::Revault))
+        };
+        let mut col = Column::new();
+        if let Some(error) = warning {
+            col = col.push(card::alert_warning(Container::new(text::small(
+                &error.to_string(),
+            ))));
+        }
+        col = col
+            .push(text::bold(text::simple("Revault vault")))
+            .push(text::simple("Broadcast the cancel transaction"))
+            .push(button_broadcast_action)
+            .spacing(20)
+            .align_items(Align::Center);
+        Column::new()
+            .push(
+                button::transparent(
+                    &mut self.back_button,
+                    Container::new(text::small("< vault transactions")),
+                )
+                .on_press(Message::Vault(VaultMessage::ListOnchainTransaction)),
+            )
+            .push(
+                card::white(Container::new(col))
+                    .width(Length::Fill)
+                    .align_x(Align::Center)
+                    .padding(20),
+            )
             .into()
     }
 }
