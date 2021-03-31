@@ -41,7 +41,7 @@ pub struct ManagerHomeState {
     blockheight: u64,
     warning: Option<Error>,
 
-    vaults: Vec<VaultListItem<VaultListItemView>>,
+    unvaulting_vaults: Vec<VaultListItem<VaultListItemView>>,
     selected_vault: Option<Vault>,
 
     spend_txs: Vec<SpendTransactionListItem>,
@@ -55,7 +55,7 @@ impl ManagerHomeState {
             balance: (0, 0),
             view: ManagerHomeView::new(),
             blockheight: 0,
-            vaults: Vec::new(),
+            unvaulting_vaults: Vec::new(),
             warning: None,
             selected_vault: None,
             spend_txs: Vec::new(),
@@ -91,9 +91,15 @@ impl ManagerHomeState {
 
     pub fn update_vaults(&mut self, vaults: Vec<model::Vault>) {
         self.calculate_balance(&vaults);
-        self.vaults = vaults
+        self.unvaulting_vaults = vaults
             .into_iter()
-            .map(|vlt| VaultListItem::new(vlt))
+            .filter_map(|vlt| {
+                if vlt.status == VaultStatus::Unvaulting || vlt.status == VaultStatus::Unvaulted {
+                    Some(VaultListItem::new(vlt))
+                } else {
+                    None
+                }
+            })
             .collect();
     }
 
@@ -106,7 +112,7 @@ impl ManagerHomeState {
         }
 
         if let Some(selected) = self
-            .vaults
+            .unvaulting_vaults
             .iter()
             .find(|vlt| vlt.vault.outpoint() == outpoint)
         {
@@ -193,7 +199,10 @@ impl State for ManagerHomeState {
                 .iter_mut()
                 .map(|tx| tx.view(ctx).map(Message::SpendTx))
                 .collect(),
-            self.vaults.iter_mut().map(|v| v.view(ctx)).collect(),
+            self.unvaulting_vaults
+                .iter_mut()
+                .map(|v| v.view(ctx))
+                .collect(),
             &self.balance,
         )
     }
