@@ -33,7 +33,7 @@ pub struct StakeholderHomeState {
     balance: (u64, u64),
     view: StakeholderHomeView,
 
-    unvaulting_vaults: Vec<VaultListItem<VaultListItemView>>,
+    moving_vaults: Vec<VaultListItem<VaultListItemView>>,
     selected_vault: Option<Vault>,
 }
 
@@ -45,17 +45,21 @@ impl StakeholderHomeState {
             view: StakeholderHomeView::new(),
             unsecured_fund_balance: 0,
             balance: (0, 0),
-            unvaulting_vaults: Vec::new(),
+            moving_vaults: Vec::new(),
             selected_vault: None,
         }
     }
 
     fn update_vaults(&mut self, vaults: Vec<model::Vault>) {
         self.calculate_balance(&vaults);
-        self.unvaulting_vaults = vaults
+        self.moving_vaults = vaults
             .into_iter()
             .filter_map(|vlt| {
-                if vlt.status == VaultStatus::Unvaulting || vlt.status == VaultStatus::Unvaulted {
+                if vlt.status == VaultStatus::Canceling
+                    || vlt.status == VaultStatus::Spending
+                    || vlt.status == VaultStatus::Unvaulting
+                    || vlt.status == VaultStatus::Unvaulted
+                {
                     Some(VaultListItem::new(vlt))
                 } else {
                     None
@@ -73,7 +77,7 @@ impl StakeholderHomeState {
         }
 
         if let Some(selected) = self
-            .unvaulting_vaults
+            .moving_vaults
             .iter()
             .find(|vlt| vlt.vault.outpoint() == outpoint)
         {
@@ -133,10 +137,7 @@ impl State for StakeholderHomeState {
         self.view.view(
             ctx,
             None,
-            self.unvaulting_vaults
-                .iter_mut()
-                .map(|v| v.view(ctx))
-                .collect(),
+            self.moving_vaults.iter_mut().map(|v| v.view(ctx)).collect(),
             &self.balance,
             &self.unsecured_fund_balance,
         )

@@ -29,7 +29,7 @@ impl ManagerHomeView {
         ctx: &Context,
         warning: Option<&Error>,
         spend_txs: Vec<Element<'a, Message>>,
-        unvaulting_vaults: Vec<Element<'a, Message>>,
+        moving_vaults: Vec<Element<'a, Message>>,
         balance: &(u64, u64),
     ) -> Element<'a, Message> {
         let mut content = Column::new().push(
@@ -73,10 +73,10 @@ impl ManagerHomeView {
             )))
         }
 
-        if !unvaulting_vaults.is_empty() {
+        if !moving_vaults.is_empty() {
             content = content
                 .push(text::bold(text::simple("Funds are moving:")))
-                .push(Column::with_children(unvaulting_vaults).spacing(10))
+                .push(Column::with_children(moving_vaults).spacing(10))
                 .spacing(20)
         };
 
@@ -113,7 +113,7 @@ impl StakeholderHomeView {
         &'a mut self,
         ctx: &Context,
         warning: Option<&Error>,
-        unvaulting_vaults: Vec<Element<'a, Message>>,
+        moving_vaults: Vec<Element<'a, Message>>,
         balance: &(u64, u64),
         unsecured_fund_balance: &u64,
     ) -> Element<'a, Message> {
@@ -147,10 +147,10 @@ impl StakeholderHomeView {
             )))
         }
 
-        if !unvaulting_vaults.is_empty() {
+        if !moving_vaults.is_empty() {
             col_body = col_body
                 .push(text::bold(text::simple("Funds are moving:")))
-                .push(Column::with_children(unvaulting_vaults).spacing(10))
+                .push(Column::with_children(moving_vaults).spacing(10))
                 .spacing(20)
         };
 
