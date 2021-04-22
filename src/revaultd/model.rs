@@ -126,6 +126,8 @@ impl VaultStatus {
         Self::Spending,
     ];
 
+    pub const UNSECURED: [VaultStatus; 3] = [Self::Unconfirmed, Self::Funded, Self::Securing];
+
     pub const ACTIVE: [VaultStatus; 1] = [Self::Active];
 
     pub const INACTIVE: [VaultStatus; 4] = [

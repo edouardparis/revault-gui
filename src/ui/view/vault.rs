@@ -560,7 +560,7 @@ fn vault_ack_pending<'a>(
                     .align_items(Align::Center),
             ),
         )
-        .on_press(VaultMessage::Select(deposit.outpoint())),
+        .on_press(VaultMessage::Acknowledge(deposit.outpoint())),
     )
     .into()
 }
@@ -568,82 +568,102 @@ fn vault_ack_pending<'a>(
 #[derive(Debug, Clone)]
 pub struct DelegateVaultListItemView {
     select_button: iced::button::State,
-    delegate_button: iced::button::State,
 }
 
 impl VaultView for DelegateVaultListItemView {
     fn new() -> Self {
-        DelegateVaultListItemView {
+        Self {
             select_button: iced::button::State::new(),
-            delegate_button: iced::button::State::new(),
         }
     }
 
     fn view(&mut self, ctx: &Context, vault: &Vault) -> iced::Element<Message> {
-        let updated_at = NaiveDateTime::from_timestamp(vault.updated_at, 0);
-        let mut row = Row::new()
+        if vault.status == VaultStatus::Secured {
+            vault_secured(&mut self.select_button, ctx, vault).map(Message::Vault)
+        } else {
+            vault_activating(ctx, vault).map(Message::Vault)
+        }
+    }
+}
+
+fn vault_activating<'a, T: 'a>(ctx: &Context, deposit: &Vault) -> Element<'a, T> {
+    card::white(Container::new(
+        Row::new()
             .push(
                 Container::new(
                     Row::new()
-                        .push(text::bold(text::simple(&format!(
+                        .push(badge::shield_success())
+                        .push(
+                            Container::new(text::success(text::bold(text::small(
+                                &deposit.address,
+                            ))))
+                            .align_y(Align::Center),
+                        )
+                        .spacing(20)
+                        .align_items(Align::Center),
+                )
+                .width(Length::Fill),
+            )
+            .push(
+                Container::new(
+                    Row::new()
+                        .push(text::success(text::bold(text::simple(&format!(
                             "{}",
-                            ctx.converter.converts(vault.amount),
-                        ))))
+                            ctx.converter.converts(deposit.amount),
+                        )))))
                         .push(text::small(&format!(" {}", ctx.converter.unit)))
                         .align_items(Align::Center),
                 )
                 .width(Length::Shrink),
             )
-            .push(
-                Container::new(
-                    Row::new()
-                        .push(Container::new(text::small(&format!("{}", updated_at))))
-                        .push(Container::new(text::bold(text::small(&format!(
-                            "{}...",
-                            &vault.address[0..10]
-                        )))))
-                        .spacing(10),
-                )
-                .width(Length::Fill),
-            )
             .spacing(20)
-            .align_items(Align::Center);
-        if vault.status == VaultStatus::Secured {
-            row = row.push(
-                Container::new(
-                    button::important(
-                        &mut self.delegate_button,
-                        button::button_content(None, "delegate"),
+            .align_items(Align::Center),
+    ))
+    .into()
+}
+
+fn vault_secured<'a>(
+    state: &'a mut iced::button::State,
+    ctx: &Context,
+    deposit: &Vault,
+) -> Element<'a, VaultMessage> {
+    Container::new(
+        button::white_card_button(
+            state,
+            Container::new(
+                Row::new()
+                    .push(
+                        Container::new(
+                            Row::new()
+                                .push(badge::shield_notif())
+                                .push(
+                                    Container::new(text::bold(text::small(&deposit.address)))
+                                        .align_y(Align::Center),
+                                )
+                                .spacing(20)
+                                .align_items(Align::Center),
+                        )
+                        .width(Length::Fill),
                     )
-                    .on_press(Message::Vault(VaultMessage::Delegate(vault.outpoint()))),
-                )
-                .width(Length::Shrink),
-            )
-        } else if vault.status == VaultStatus::Funded {
-            row = row.push(
-                Container::new(
-                    button::important(
-                        &mut self.delegate_button,
-                        button::button_content(None, "Ack then delegate"),
+                    .push(
+                        Container::new(
+                            Row::new()
+                                .push(text::bold(text::simple(&format!(
+                                    "{}",
+                                    ctx.converter.converts(deposit.amount),
+                                ))))
+                                .push(text::small(&format!(" {}", ctx.converter.unit)))
+                                .align_items(Align::Center),
+                        )
+                        .width(Length::Shrink),
                     )
-                    .on_press(Message::Vault(VaultMessage::Acknowledge(vault.outpoint()))),
-                )
-                .width(Length::Shrink),
-            )
-        } else if vault.status == VaultStatus::Securing {
-            row = row.push(Container::new(text::small("waiting ack...")).width(Length::Shrink))
-        } else if vault.status == VaultStatus::Activating {
-            row = row.push(Container::new(text::small("activating...")).width(Length::Shrink))
-        }
-        row.push(
-            button::transparent(
-                &mut self.select_button,
-                button::button_content(None, "view"),
-            )
-            .on_press(Message::Vault(VaultMessage::Select(vault.outpoint()))),
+                    .spacing(20)
+                    .align_items(Align::Center),
+            ),
         )
-        .into()
-    }
+        .on_press(VaultMessage::Delegate(deposit.outpoint())),
+    )
+    .into()
 }
 
 #[derive(Debug)]

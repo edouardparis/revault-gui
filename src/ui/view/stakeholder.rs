@@ -84,85 +84,61 @@ impl StakeholderDelegateFundsView {
         &'a mut self,
         ctx: &Context,
         active_balance: &u64,
-        vaults: Vec<Element<'a, Message>>,
+        available_vaults: Vec<Element<'a, Message>>,
+        unsecured_vaults: Vec<Element<'a, Message>>,
         warning: Option<&Error>,
-        display_delegated: &bool,
     ) -> Element<'a, Message> {
-        let mut vaults_header = Row::new()
-            .push(
-                Container::new(text::simple(&format!("{} vaults", vaults.len())))
+        let mut col = Column::new().push(
+            card::white(Container::new(
+                Column::new()
+                    .push(
+                        Row::new()
+                            .push(text::bold(text::simple(&format!(
+                                "{}",
+                                ctx.converter.converts(*active_balance)
+                            ))))
+                            .push(text::simple(&ctx.converter.unit.to_string()))
+                            .spacing(10)
+                            .align_items(Align::Center),
+                    )
+                    .push(text::simple("are delegated to the managers")),
+            ))
+            .width(Length::Fill),
+        );
+
+        if available_vaults.len() > 0 {
+            col = col
+                .push(
+                    Container::new(text::simple(&format!(
+                        "{} vaults are available",
+                        available_vaults.len()
+                    )))
                     .width(Length::Fill),
-            )
-            .align_items(Align::Center);
-        if *display_delegated {
-            vaults_header = vaults_header
-                .push(
-                    button::transparent(
-                        &mut self.secured_vaults_button,
-                        button::button_content(None, "Available vaults"),
-                    )
-                    .on_press(Message::FilterVaults(
-                        VaultFilterMessage::Status(&VaultStatus::INACTIVE),
-                    )),
                 )
                 .push(
-                    button::primary(
-                        &mut self.active_vaults_button,
-                        button::button_content(None, "Delegated vaults"),
-                    )
-                    .on_press(Message::FilterVaults(
-                        VaultFilterMessage::Status(&VaultStatus::ACTIVE),
-                    )),
-                );
-        } else {
-            vaults_header = vaults_header
-                .push(
-                    button::primary(
-                        &mut self.secured_vaults_button,
-                        button::button_content(None, "Available vaults"),
-                    )
-                    .on_press(Message::FilterVaults(
-                        VaultFilterMessage::Status(&VaultStatus::INACTIVE),
-                    )),
-                )
-                .push(
-                    button::transparent(
-                        &mut self.active_vaults_button,
-                        button::button_content(None, "Delegated vaults"),
-                    )
-                    .on_press(Message::FilterVaults(
-                        VaultFilterMessage::Status(&VaultStatus::ACTIVE),
-                    )),
-                );
-        }
-        let col = Column::new()
-            .push(
-                card::white(Container::new(
                     Column::new()
-                        .push(
-                            Row::new()
-                                .push(text::bold(text::simple(&format!(
-                                    "{}",
-                                    ctx.converter.converts(*active_balance)
-                                ))))
-                                .push(text::simple(&ctx.converter.unit.to_string()))
-                                .spacing(10)
-                                .align_items(Align::Center),
-                        )
-                        .push(text::simple("are delegated to the managers")),
-                ))
-                .width(Length::Fill),
-            )
-            .push(
-                card::white(Container::new(
-                    Column::new()
-                        .push(vaults_header)
-                        .push(Column::with_children(vaults).spacing(5))
+                        .push(Column::with_children(available_vaults).spacing(5))
                         .spacing(20),
-                ))
-                .width(Length::Fill),
-            )
-            .spacing(15);
+                )
+                .spacing(15);
+        }
+
+        if unsecured_vaults.len() > 0 {
+            col = col
+                .push(
+                    Container::new(text::simple(&format!(
+                        "{} vaults needs to be acknowledge first",
+                        unsecured_vaults.len()
+                    )))
+                    .width(Length::Fill),
+                )
+                .push(
+                    Column::new()
+                        .push(Column::with_children(unsecured_vaults).spacing(5))
+                        .spacing(20),
+                )
+                .spacing(15);
+        }
 
         layout::dashboard(
             navbar(layout::navbar_warning(warning)),
